@@ -9,15 +9,19 @@ import (
 func TestOpenImage_errors(t *testing.T) {
 	tt := map[string]struct {
 		input string
-		err   string
+		err   Error
 	}{
 		"no such file": {
 			input: "doesnt_exist.png",
-			err:   "no such file or directory",
+			err:   ErrOpeningFile,
+		},
+		"can't decode data": {
+			input: "testdata/empty_file.png",
+			err:   ErrDecodingError,
 		},
 		"not an rgba png": {
 			input: "testdata/rgb.png",
-			err:   "expected RGBA image, got *image.Paletted",
+			err:   ErrExpectedRGBAImage,
 		},
 	}
 
@@ -28,7 +32,8 @@ func TestOpenImage_errors(t *testing.T) {
 
 			assert.Nil(t, img)
 			assert.Error(t, err)
-			assert.ErrorContains(t, err, tc.err)
+			assert.ErrorIs(t, err, tc.err)
+			// assert.ErrorContains(t, err, tc.err)
 		})
 	}
 }
