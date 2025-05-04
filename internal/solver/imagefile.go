@@ -1,4 +1,4 @@
-package main
+package solver
 
 import (
 	"fmt"
@@ -32,4 +32,9 @@ func openMaze(imagePath string) (*image.RGBA, error) {
 	}
 
 	return rgbaImage, nil
+}
+
+// SaveSolution saves the image as a PNG file with the solution path highlighted.
+func (s *Solver) SaveSolution(outputPath string) error {
+	return nil
 }

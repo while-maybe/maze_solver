@@ -1,4 +1,4 @@
-package main
+package solver
 
 type Error string
 
