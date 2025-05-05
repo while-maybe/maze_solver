@@ -206,3 +206,4 @@ mc_data_*.txt
 
 # maze builder not needed here
 /builder
+mazesolver
