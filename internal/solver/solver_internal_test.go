@@ -56,6 +56,8 @@ func TestSolver_findEntrance_error(t *testing.T) {
 	}
 
 	for name, tc := range tt {
+		name, tc := name, tc
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
