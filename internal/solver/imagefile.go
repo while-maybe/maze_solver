@@ -1,6 +1,7 @@
 package solver
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"image/png"
@@ -11,6 +12,9 @@ const (
 	ErrOpeningFile       = Error("unable to open image file")
 	ErrDecodingError     = Error("unable to load input image")
 	ErrExpectedRGBAImage = Error("expected RGBA image")
+	ErrCreatingFile      = Error("unable to create output image file")
+	ErrClosingFile       = Error("unable to close image file")
+	ErrWritingFile       = Error("unable to write image file")
 )
 
 // openMaze opens an RGBA PNG image from a path.
@@ -35,6 +39,30 @@ func openMaze(imagePath string) (*image.RGBA, error) {
 }
 
 // SaveSolution saves the image as a PNG file with the solution path highlighted.
-func (s *Solver) SaveSolution(outputPath string) error {
+func (s *Solver) SaveSolution(outputPath string) (err error) {
+	f, err := os.Create(outputPath)
+	if err != nil {
+		return fmt.Errorf("%w at: %s", ErrCreatingFile, outputPath)
+	}
+
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil {
+			err = errors.Join(err, ErrClosingFile, closeErr)
+		}
+	}()
+
+	stepsFromTreasure := s.solution
+
+	// paint the path from the last position back to the entrance
+	for stepsFromTreasure != nil {
+		s.maze.Set(stepsFromTreasure.at.X, stepsFromTreasure.at.Y, s.palette.solution)
+		stepsFromTreasure = stepsFromTreasure.previousStep
+	}
+
+	err = png.Encode(f, s.maze)
+	if err != nil {
+		return fmt.Errorf("%w at %s: %w", ErrWritingFile, outputPath, err)
+	}
+
 	return nil
 }
