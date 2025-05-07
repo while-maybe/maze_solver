@@ -18,6 +18,7 @@ type Solver struct {
 	palette        palette
 	pathsToExplore chan *path
 	solution       *path
+	quit           chan struct{}
 	mutex          sync.Mutex
 }
 
@@ -33,6 +34,7 @@ func New(imagePath string) (*Solver, error) {
 		palette:        defaultPalette(),
 		pathsToExplore: make(chan *path, 1),
 		solution:       nil,
+		quit:           make(chan struct{}),
 	}, nil
 }
 

@@ -3,6 +3,7 @@ package solver
 import (
 	"image"
 	"log"
+	"sync"
 )
 
 // explore one path and publish it to the s.pathsToExplore channel any branch we discover that we don't take.
@@ -14,7 +15,15 @@ func (s *Solver) explore(pathToBranch *path) {
 
 	pos := pathToBranch.at
 
-	for !s.solutionFound() {
+	for {
+		// is it time to quit? Did another goroutine found the treasure?
+		select {
+		case <-s.quit:
+			return
+		default:
+			// continue exploring
+		}
+
 		// we'll have up to 3 neighbours to explore.
 		candidates := make([]image.Point, 0, 3)
 
@@ -35,6 +44,8 @@ func (s *Solver) explore(pathToBranch *path) {
 
 					s.solution = &path{previousStep: pathToBranch, at: n}
 					log.Printf("Treasure found at %v", n)
+					// s.quit <- struct{}{}
+					close(s.quit)
 				}
 
 				return
@@ -51,7 +62,14 @@ func (s *Solver) explore(pathToBranch *path) {
 		// notify the channel when there's more than one possible paths to explore
 		for _, candidate := range candidates[1:] {
 			branch := &path{previousStep: pathToBranch, at: candidate}
-			s.pathsToExplore <- branch
+			select {
+			// remember s.quit only returns a zero value after channel is closed!
+			case <-s.quit:
+				log.Printf("I'm an unlucky branch, someone else found the treasure. I gave up at %v", pos)
+				return
+			case s.pathsToExplore <- branch:
+				//continue execution
+			}
 		}
 
 		// continue exploring
@@ -63,11 +81,21 @@ func (s *Solver) explore(pathToBranch *path) {
 
 // listenToBranches creates a new goroutine for each branch published in s.pathsToExplore
 func (s *Solver) listenToBranches() {
-	for p := range s.pathsToExplore {
-		go s.explore(p)
+	wg := sync.WaitGroup{}
+	defer wg.Wait()
 
-		if s.solutionFound() {
+	for {
+		select {
+		case <-s.quit:
+			log.Println("Treasure found, stopping worker")
 			return
+		case p := <-s.pathsToExplore:
+			wg.Add(1)
+
+			go func(path *path) {
+				defer wg.Done()
+				s.explore(p)
+			}(p)
 		}
 	}
 }
@@ -75,12 +103,4 @@ func (s *Solver) listenToBranches() {
 // isPreviousStep returns true if the given point is the previous position of the path.
 func (p path) isPreviousStep(n image.Point) bool {
 	return p.previousStep != nil && p.previousStep.at == n
-}
-
-// solutionFound returns true if the solution has been found
-func (s *Solver) solutionFound() bool {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	return s.solution != nil
 }
