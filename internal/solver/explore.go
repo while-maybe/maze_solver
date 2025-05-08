@@ -16,11 +16,16 @@ func (s *Solver) explore(pathToBranch *path) {
 	pos := pathToBranch.at
 
 	for {
+		s.mutex.Lock()
+		s.maze.SetRGBA(pos.X, pos.Y, s.palette.explored)
+		s.mutex.Unlock()
+
 		// is it time to quit? Did another goroutine found the treasure?
 		select {
 		case <-s.quit:
 			return
-		default:
+		case s.exploredPixels <- pos:
+
 			// continue exploring
 		}
 

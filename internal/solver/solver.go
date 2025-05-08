@@ -3,6 +3,7 @@ package solver
 import (
 	"fmt"
 	"image"
+	"image/gif"
 	"log"
 	"sync"
 )
@@ -14,12 +15,17 @@ const (
 // Solver is capable of finding the path from the entrance to the treasure.
 // The maze has to be an RGB image
 type Solver struct {
-	maze           *image.RGBA
-	palette        palette
+	maze    *image.RGBA
+	palette palette
+
 	pathsToExplore chan *path
-	solution       *path
 	quit           chan struct{}
-	mutex          sync.Mutex
+
+	solution *path
+	mutex    sync.Mutex
+
+	exploredPixels chan image.Point
+	animation      *gif.GIF
 }
 
 // New builds a Solver by taking the path to the PNG maze, encoded in RGBA.
@@ -33,8 +39,9 @@ func New(imagePath string) (*Solver, error) {
 		maze:           img,
 		palette:        defaultPalette(),
 		pathsToExplore: make(chan *path, 1),
-		solution:       nil,
 		quit:           make(chan struct{}),
+		exploredPixels: make(chan image.Point),
+		animation:      &gif.GIF{},
 	}, nil
 }
 
@@ -48,7 +55,23 @@ func (s *Solver) Solve() error {
 	log.Printf("starting at pos: %v", entrance)
 
 	s.pathsToExplore <- &path{previousStep: nil, at: entrance}
-	s.listenToBranches()
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	defer wg.Wait()
+
+	go func() {
+		defer wg.Done()
+		// Launch the goroutine in charge of drawing the GIF image.
+		s.registerExploredPixels()
+	}()
+
+	go func() {
+		defer wg.Done()
+		s.listenToBranches()
+	}()
+
 	return nil
 }
 
