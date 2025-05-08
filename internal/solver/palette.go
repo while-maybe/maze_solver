@@ -20,6 +20,6 @@ func defaultPalette() palette {
 		entrance: color.RGBA{R: 0, G: 191, B: 255, A: 255},   // deep sky blue
 		treasure: color.RGBA{R: 255, G: 0, B: 128, A: 255},   // pink
 		solution: color.RGBA{R: 255, G: 140, B: 0, A: 255},   // orange
-		explored: color.RGBA{R: 0, G: 254, B: 254, A: 255},   // almost white
+		explored: color.RGBA{R: 0, G: 254, B: 254, A: 255},   // cyan
 	}
 }
