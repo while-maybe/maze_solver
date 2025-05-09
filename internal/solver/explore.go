@@ -59,7 +59,7 @@ func (s *Solver) explore(pathToBranch *path) {
 		}
 
 		if len(candidates) == 0 {
-			log.Printf("This is not the way: %v", pos)
+			// log.Printf("This is not the way: %v", pos)
 			return
 		}
 

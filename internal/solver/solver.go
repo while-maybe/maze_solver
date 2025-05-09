@@ -59,7 +59,7 @@ func (s *Solver) Solve() error {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	defer wg.Wait()
+	// defer wg.Wait()
 
 	go func() {
 		defer wg.Done()
@@ -71,6 +71,9 @@ func (s *Solver) Solve() error {
 		defer wg.Done()
 		s.listenToBranches()
 	}()
+
+	wg.Wait()
+	s.writeLastFrame()
 
 	return nil
 }

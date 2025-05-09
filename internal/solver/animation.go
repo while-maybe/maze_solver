@@ -57,3 +57,18 @@ func (s *Solver) drawCurrentFrameToGIF() {
 	s.animation.Image = append(s.animation.Image, frame)
 	s.animation.Delay = append(s.animation.Delay, frameDuration)
 }
+
+// writeLastFrame write the final frame to the GIF with a highlighted solution and a longer duration
+func (s *Solver) writeLastFrame() {
+	stepsFromTreasure := s.solution
+
+	// paint the path from entrance to treasure
+	for stepsFromTreasure != nil {
+		s.maze.Set(stepsFromTreasure.at.X, stepsFromTreasure.at.Y, s.palette.solution)
+		stepsFromTreasure = stepsFromTreasure.previousStep
+	}
+
+	const solutionFrameDuration = 300 // 3s
+	s.drawCurrentFrameToGIF()
+	s.animation.Delay[len(s.animation.Delay)-1] = solutionFrameDuration
+}

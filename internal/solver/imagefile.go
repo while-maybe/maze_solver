@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/gif"
 	"image/png"
+	"log"
 	"os"
+	"strings"
 )
 
 const (
@@ -15,6 +18,8 @@ const (
 	ErrCreatingFile      = Error("unable to create output image file")
 	ErrClosingFile       = Error("unable to close image file")
 	ErrWritingFile       = Error("unable to write image file")
+	ErrCreatingAnimGIF   = Error("unable to create output animated GIF")
+	ErrEncodingGIF       = Error("unable to encode animated GIF")
 )
 
 // openMaze opens an RGBA PNG image from a path.
@@ -62,6 +67,34 @@ func (s *Solver) SaveSolution(outputPath string) (err error) {
 	err = png.Encode(f, s.maze)
 	if err != nil {
 		return fmt.Errorf("%w at %s: %w", ErrWritingFile, outputPath, err)
+	}
+
+	gifPath := strings.Replace(outputPath, "png", "gif", -1)
+	err = s.saveAnimation(gifPath)
+	if err != nil {
+		return ErrCreatingAnimGIF
+	}
+
+	return nil
+}
+
+// saveAnimation writes the animated GIF file
+func (s *Solver) saveAnimation(gifPath string) error {
+	outputImage, err := os.Create(gifPath)
+	if err != nil {
+		return fmt.Errorf("%w at: %s", ErrCreatingFile, gifPath)
+	}
+
+	defer func() {
+		if closeErr := outputImage.Close(); closeErr != nil {
+			err = errors.Join(err, ErrClosingFile, closeErr)
+		}
+	}()
+
+	log.Printf("Animation contains %d frames\n", len(s.animation.Image))
+	err = gif.EncodeAll(outputImage, s.animation)
+	if err != nil {
+		return ErrEncodingGIF
 	}
 
 	return nil
